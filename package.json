@@ -1,0 +1,27 @@
+{
+  "name": "advent-of-code",
+  "version": "0.0.0",
+  "private": true,
+  "repository": "git@github.com:suguru03/advent-of-code.git",
+  "author": "Suguru Motegi <suguru.motegi@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "precommit": "lint-staged"
+  },
+  "devDependencies": {
+    "husky": "^7.0.0",
+    "lint-staged": "^12.4.1",
+    "prettier": "^2.6.2"
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true,
+    "trailingComma": "all"
+  },
+  "lint-staged": {
+    "*.{js,ts}": [
+      "prettier --write"
+    ]
+  },
+  "packageManager": "yarn@3.3.0"
+}
