@@ -51,9 +51,7 @@ function execute({ stacks, operations }: Data) {
   for (const op of operations) {
     const from = stacks[op.from - 1];
     const to = stacks[op.to - 1];
-    for (let i = 0; i < op.move; i++) {
-      to.push(from.pop()!);
-    }
+    to.push(...from.splice(-op.move));
   }
 
   return stacks.map((stack) => stack.pop()).join('');
