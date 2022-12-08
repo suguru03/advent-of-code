@@ -5,6 +5,7 @@ import * as assert from 'assert';
 const file = fs.readFileSync(path.resolve(__dirname, 'input.txt'), 'utf8');
 const rows = parseInput(file);
 console.log(getFullyContain(rows));
+console.log(getOverlap(rows));
 
 interface Pair {
   start: number;
@@ -40,6 +41,18 @@ function getFullyContain(rows: Row[]) {
   }).length;
 }
 
+function getOverlap(rows: Row[]) {
+  return rows.filter(({ left, right }) => {
+    [left, right] = [left, right].sort((l1, l2) => l1.start - l2.start || l2.end - l1.end);
+    return right.start <= left.end;
+  }).length;
+}
+
 assert.deepStrictEqual(getFullyContain([{ left: { start: 2, end: 8 }, right: { start: 3, end: 7 } }]), 1);
 assert.deepStrictEqual(getFullyContain([{ left: { start: 6, end: 6 }, right: { start: 4, end: 6 } }]), 1);
 assert.deepStrictEqual(getFullyContain([{ left: { start: 20, end: 87 }, right: { start: 20, end: 88 } }]), 1);
+
+assert.deepStrictEqual(getOverlap([{ left: { start: 5, end: 7 }, right: { start: 7, end: 9 } }]), 1);
+assert.deepStrictEqual(getOverlap([{ left: { start: 2, end: 8 }, right: { start: 3, end: 7 } }]), 1);
+assert.deepStrictEqual(getOverlap([{ left: { start: 6, end: 6 }, right: { start: 4, end: 6 } }]), 1);
+assert.deepStrictEqual(getOverlap([{ left: { start: 2, end: 6 }, right: { start: 4, end: 8 } }]), 1);
