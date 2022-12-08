@@ -1,10 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as assert from 'assert';
 
 const file = fs.readFileSync(path.resolve(__dirname, 'input.txt'), 'utf8');
-const rows = parseInput(file);
-console.log(execute(rows));
+console.log(execute1(parseInput(file)));
+console.log(execute2(parseInput(file)));
 
 interface Operation {
   move: number;
@@ -47,12 +46,22 @@ function parseInput(file: string) {
   return data;
 }
 
-function execute({ stacks, operations }: Data) {
+function execute1({ stacks, operations }: Data) {
+  for (const op of operations) {
+    const from = stacks[op.from - 1];
+    const to = stacks[op.to - 1];
+    for (let i = 0; i < op.move; i++) {
+      to.push(from.pop()!);
+    }
+  }
+  return stacks.map((stack) => stack.pop()).join('');
+}
+
+function execute2({ stacks, operations }: Data) {
   for (const op of operations) {
     const from = stacks[op.from - 1];
     const to = stacks[op.to - 1];
     to.push(...from.splice(-op.move));
   }
-
   return stacks.map((stack) => stack.pop()).join('');
 }
