@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as assert from 'assert';
 
 const file = fs.readFileSync(path.resolve(__dirname, 'input.txt'), 'utf8');
-const str = parseInput(file);
+const operations = parseInput(file);
 
 interface Operation {
   command: string;
@@ -74,9 +74,20 @@ class Dir extends File {
   }
 }
 
-console.log(getTotal(str));
+console.log(operatePart1(operations));
+console.log(operatePart2(operations));
 
-function getTotal(operations: Operation[]) {
+function operatePart1(operations: Operation[]) {
+  const root = makeDir(operations);
+  return getSum(root, 100_000);
+}
+
+function operatePart2(operations: Operation[]) {
+  const root = makeDir(operations);
+  return findMin(root, root.size - (70_000_000 - 30_000_000));
+}
+
+function makeDir(operations: Operation[]) {
   const root = new Dir('root');
   const stack: Dir[] = [root];
   for (const op of operations) {
@@ -110,7 +121,7 @@ function getTotal(operations: Operation[]) {
     throw new Error('Unknown command');
   }
 
-  return getSum(root, 100_000);
+  return root;
 }
 
 function getSum(dir: Dir | File, threshold: number) {
@@ -118,4 +129,15 @@ function getSum(dir: Dir | File, threshold: number) {
     return 0;
   }
   return dir.getChildren().reduce((acc, file) => acc + getSum(file, threshold), dir.size > threshold ? 0 : dir.size);
+}
+
+function findMin(dir: Dir | File, threshold: number) {
+  if (!(dir instanceof Dir)) {
+    return Infinity;
+  }
+  if (dir.size < threshold) {
+    return Infinity;
+  }
+
+  return Math.min(dir.size, ...dir.getChildren().map((file) => findMin(file, threshold)));
 }
