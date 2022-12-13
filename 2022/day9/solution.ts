@@ -47,6 +47,29 @@ class Solution {
     return seen.size;
   }
 
+  solve2() {
+    const operations = this.parse();
+    const vectors = Array.from({ length: 10 }, () => Vector2.zero);
+    const seen = new Set<string>([Vector2.zero.id]);
+    for (const { direction, count } of operations) {
+      for (let c = 0; c < count; c++) {
+        let i = 0;
+        vectors[i] = vectors[i].add(vectorMap[direction]);
+        while (++i < vectors.length) {
+          const d = vectors[i].distance(vectors[i - 1]);
+          if (d < 2) {
+            break;
+          }
+          const prev = vectors[i - 1];
+          const curr = vectors[i];
+          vectors[i] = curr.add(new Vector2(Math.sign(prev.x - curr.x), Math.sign(prev.y - curr.y)));
+        }
+        seen.add(vectors[vectors.length - 1].id);
+      }
+    }
+    return seen.size;
+  }
+
   private parse(): Operation[] {
     return File.parse(path.resolve(__dirname, 'input.txt'), (file) =>
       file.split(/\n/g).map((row) => {
@@ -61,3 +84,4 @@ class Solution {
 }
 
 console.log(new Solution().solve1());
+console.log(new Solution().solve2());
