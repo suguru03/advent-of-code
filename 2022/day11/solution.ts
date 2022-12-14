@@ -21,16 +21,24 @@ interface Monkey {
 
 class Solution {
   solve1() {
+    return this.solve(20, 3);
+  }
+
+  solve2() {
+    return this.solve(10000, 1);
+  }
+
+  private solve(count: number, div: number) {
     const monkeys = this.parse();
+    const mod = monkeys.reduce((acc, { test }) => acc * test.div, 1);
     const counts = Array.from(monkeys, () => 0);
-    let count = 20;
     while (count-- > 0) {
       for (const { id, items, operation: op, test } of monkeys) {
         while (items.length > 0) {
           counts[id]++;
           const prev = items.shift();
           const next = eval(`${op.left === old ? prev : op.left} ${op.operator} ${op.right === old ? prev : op.right}`);
-          const level = (next / 3) | 0;
+          const level = ((next % mod) / div) | 0;
           const target = test[`${level % test.div === 0}`];
           monkeys[target].items.push(level);
         }
@@ -39,9 +47,6 @@ class Solution {
     const [left, right] = counts.sort((n1, n2) => n2 - n1);
     return left * right;
   }
-
-  solve2() {}
-
   private parse(): Monkey[] {
     return File.parse(path.resolve(__dirname, 'input.txt'), (file) => {
       const monkeys: Monkey[] = [];
@@ -106,3 +111,4 @@ class Solution {
 }
 
 console.log(new Solution().solve1());
+console.log(new Solution().solve2());
