@@ -4,6 +4,10 @@ import { File } from '../utils/file';
 type Item = Node | number;
 class Node {
   constructor(readonly list: Item[] = []) {}
+
+  toString() {
+    return `[${this.list.join(' ,')}]`;
+  }
 }
 
 class Root {
@@ -21,6 +25,19 @@ class Solution {
     }
 
     return sum;
+  }
+  solve2() {
+    const key1 = new Node([new Node([2])]);
+    const key2 = new Node([new Node([6])]);
+    const roots = this.parse();
+    const nodes: Item[] = [key1, key2, ...roots.flatMap(({ left, right }) => [left, right])];
+    nodes.sort((n1, n2) => {
+      const result = this.compare(n1, n2);
+      return result ? -1 : 1;
+    });
+    const i1 = nodes.findIndex((node) => node === key1);
+    const i2 = nodes.findIndex((node) => node === key2);
+    return (i1 + 1) * (i2 + 1);
   }
 
   private compare(left: Item, right: Item): boolean | null {
@@ -86,7 +103,7 @@ class Solution {
             }
             case ']': {
               if (cur) {
-                node.list.push(Number(cur));
+                node.list.push(this.toNumber(cur));
               }
               cur = '';
               node = stack.pop()!;
@@ -94,7 +111,7 @@ class Solution {
             }
             case ',': {
               if (cur) {
-                node.list.push(Number(cur));
+                node.list.push(this.toNumber(cur));
               }
               cur = '';
               break;
@@ -118,6 +135,15 @@ class Solution {
       return roots;
     });
   }
+
+  private toNumber(str: string) {
+    const num = Number(str);
+    if (isNaN(num)) {
+      throw new Error(`invalid ${str}`);
+    }
+    return num;
+  }
 }
 
 console.log(new Solution().solve1());
+console.log(new Solution().solve2());
