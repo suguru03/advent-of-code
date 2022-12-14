@@ -31,6 +31,37 @@ class Solution {
     return sum;
   }
 
+  solve2() {
+    const operations = this.parse();
+    let x = 1;
+    let image = '';
+    const queue: number[] = [];
+    while (queue.length > 0 || operations.length > 0) {
+      const diff = Math.abs(x - (image.length % 40));
+      image += diff <= 1 ? '#' : '.';
+      if (queue.length !== 0) {
+        x += queue.shift()!;
+        continue;
+      }
+
+      const op = operations.shift();
+      if (op?.command === 'addx') {
+        queue.push(op.count);
+      }
+    }
+    return this.getImage(image);
+  }
+
+  private getImage(image: string) {
+    let text = '';
+    for (let i = 0; i < image.length; i++) {
+      if (i % 40 === 0) {
+        text += '\n';
+      }
+      text += image[i];
+    }
+    return text.trim();
+  }
 
   private parse(): Operation[] {
     return File.parse(path.resolve(__dirname, 'input.txt'), (file) =>
@@ -46,3 +77,4 @@ class Solution {
 }
 
 console.log(new Solution().solve1());
+console.log(new Solution().solve2());
