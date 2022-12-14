@@ -9,6 +9,22 @@ export class Vector2 {
     return this.toString();
   }
 
+  get left() {
+    return this.add(Vector2.left);
+  }
+
+  get right() {
+    return this.add(Vector2.right);
+  }
+
+  get down() {
+    return this.add(Vector2.down);
+  }
+
+  get up() {
+    return this.add(Vector2.up);
+  }
+
   constructor(readonly x: number, readonly y: number) {}
 
   add(left: Vector2) {
