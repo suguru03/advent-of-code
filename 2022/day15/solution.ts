@@ -1,11 +1,11 @@
 import * as path from 'path';
 import { File } from '../utils/file';
 import { Vector2 } from '../utils/vector';
-import { moveCursor } from 'readline';
 
 interface Info {
   sensor: Vector2;
   beacon: Vector2;
+  total: number;
 }
 
 enum Item {
@@ -14,15 +14,14 @@ enum Item {
   Signal = '#',
   Empty = '.',
 }
+
 class Solution {
-  solve1() {
-    let target = 2000000;
+  solve1(target = 2_000_000) {
     const list = this.parse();
     const row: Record<number, Item> = {};
-    for (const { sensor, beacon } of list) {
+    for (const { sensor, beacon, total } of list) {
       fill(sensor, Item.Sensor, true);
       fill(beacon, Item.Beacon, true);
-      const total = Math.abs(sensor.x - beacon.x) + Math.abs(sensor.y - beacon.y);
       const sign = Math.sign(target - sensor.y);
       const maxY = sensor.y + sign * total;
       let rest = Math.abs(maxY - target);
@@ -59,6 +58,28 @@ class Solution {
     }
   }
 
+  solve2() {
+    const list = this.parse();
+    const threshold = 4_000_000;
+    for (let y = 0; y <= threshold; y++) {
+      loop: for (let x = 0; x <= threshold; x++) {
+        for (const { sensor, total } of list) {
+          const distanceX = Math.abs(sensor.x - x);
+          const distanceY = Math.abs(sensor.y - y);
+          if (distanceX + distanceY > total) {
+            continue;
+          }
+          x += total - distanceY - distanceX;
+          continue loop;
+        }
+
+        return x * threshold + y;
+      }
+    }
+
+    return -1;
+  }
+
   private getRange(row: Record<number, Item>) {
     let minX = Infinity;
     let maxX = -Infinity;
@@ -81,11 +102,13 @@ class Solution {
   private parse(): Info[] {
     return File.parse(path.resolve(__dirname, 'input.txt'), (file) =>
       file.split(/\n/g).map((row) => {
-        const [, xs, xy, xb, yb] = row.match(/.+x=(.+), y=(.+):.+x=(.+), y=(.+)/)?.map((num) => Number(num)) ?? [];
-        return { sensor: new Vector2(xs, xy), beacon: new Vector2(xb, yb) };
+        const [, xs, ys, xb, yb] = row.match(/.+x=(.+), y=(.+):.+x=(.+), y=(.+)/)?.map((num) => Number(num)) ?? [];
+        const total = Math.abs(xs - xb) + Math.abs(ys - yb);
+        return { sensor: new Vector2(xs, ys), beacon: new Vector2(xb, yb), total };
       }),
     );
   }
 }
 
 console.log(new Solution().solve1());
+console.log(new Solution().solve2());
