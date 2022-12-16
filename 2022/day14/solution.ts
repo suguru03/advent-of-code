@@ -10,8 +10,16 @@ enum Item {
 
 class Solution {
   solve1() {
+    return this.solve(false);
+  }
+
+  solve2() {
+    return this.solve(true);
+  }
+
+  private solve(hasFloor: boolean) {
     const [grid] = this.parse();
-    let bottom = grid.length;
+    let bottom = grid.length + (hasFloor ? 1 : 0);
     const start = new Vector2(500, 0);
     let count = 0;
     fillItem(start, Item.Air);
@@ -19,13 +27,13 @@ class Solution {
       count++;
     }
 
-    count -= Number(grid[start.y][start.x] !== Item.Air);
-
     return count;
 
     function fillSand(vector: Vector2) {
       if (vector.y >= bottom) {
-        bottom = 0;
+        if (!hasFloor) {
+          bottom = 0;
+        }
         return false;
       }
 
@@ -47,6 +55,9 @@ class Solution {
     }
 
     function isBlocked({ x, y }: Vector2) {
+      if (hasFloor && y === bottom) {
+        return true;
+      }
       const cur = grid[y]?.[x];
       return cur === Item.Rock || cur === Item.Sand;
     }
@@ -105,3 +116,4 @@ class Solution {
 }
 
 console.log(new Solution().solve1());
+console.log(new Solution().solve2());
