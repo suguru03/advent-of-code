@@ -101,12 +101,9 @@ class Solution {
         }
         if (foundIndices.length !== 0) {
           foundCount++;
-        } else if (ir === 0) {
+        } else {
           foundCount = 1;
           foundIndices = [...indices];
-        } else {
-          foundCount = 0;
-          foundIndices = [];
         }
       }
       if (foundCount === rocks.length * 2) {
