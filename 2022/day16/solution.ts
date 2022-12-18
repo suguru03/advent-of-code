@@ -26,25 +26,17 @@ interface Score {
 
 class Solution {
   private start = 'AA';
+  private dummyStart = '00';
   solve1() {
     const map = this.parse();
     const flatMap = this.flat(map);
     let max = 0;
     const timeLimit = 30;
     const openedSet = new Set<Valve>();
-    const startData = flatMap.get(this.start)!;
-    // open A
-    if (startData.rate !== 0) {
-      dfs(this.start, 0, 0, 0);
-    }
-    // not open A
-    for (const [valve, distance] of startData.distanceMap) {
-      dfs(valve, 0, 0, distance);
-    }
-
+    open(this.dummyStart, 0, 0, -1);
     return max;
 
-    function dfs(current: Valve, score: number, total: number, time: number) {
+    function open(current: Valve, score: number, total: number, time: number) {
       if (time === timeLimit) {
         max = Math.max(max, total);
         return;
@@ -64,10 +56,10 @@ class Solution {
       for (const [next, distance] of data.distanceMap) {
         if (time + distance > timeLimit) {
           const diff = timeLimit - time;
-          dfs('', score, total + score * diff, timeLimit);
+          open('', score, total + score * diff, timeLimit);
           continue;
         }
-        dfs(next, score, total + score * distance, time + distance);
+        open(next, score, total + score * distance, time + distance);
       }
       openedSet.delete(current);
     }
@@ -85,6 +77,13 @@ class Solution {
         data.distanceMap.delete(target);
       }
     }
+
+    const dummyStep: FlatData = {
+      valve: this.dummyStart,
+      rate: 0,
+      distanceMap: new Map([[this.start, -1]]),
+    };
+    flatMap.set(dummyStep.valve, dummyStep);
 
     return flatMap;
 
