@@ -4,44 +4,90 @@ import { File } from '../utils/file';
 class Node {
   prev: Node;
   next: Node;
-  constructor(readonly val: number) {}
+  constructor(public val: number) {}
 }
 class Solution {
   solve1() {
     const head = this.parse();
     let node = head;
-    const set = new Set<Node>();
-    while (!set.has(node)) {
-      set.add(node);
+    const orders: Node[] = [];
+    do {
+      orders.push(node);
       node = node.next;
+    } while (head !== node);
+    return this.sum(this.solve(orders));
+  }
+
+  solve2() {
+    const head = this.parse();
+    let node = head;
+    const key = 811589153;
+    const orders: Node[] = [];
+    do {
+      orders.push(node);
+      node.val *= key;
+      node = node.next;
+    } while (head !== node);
+    for (let t = 0; t < 10; t++) {
+      this.solve(orders);
     }
-    const queue = Array.from(set);
+    return this.sum(head);
+  }
+
+  solve(queue: Node[]) {
+    const [head] = queue;
+    const size = queue.length;
+    queue = [...queue];
     while (queue.length !== 0) {
       let node = queue.shift()!;
-      for (let i = 0; i < node.val; i++) {
+      let limit = node.val % (size - 1);
+      for (let i = 0; i < limit; i++) {
         const { prev, next } = node;
         const nextNext = next.next;
         // prev, node, next, next.next -> prev, next, node, next.next
-        [prev.next, next.prev, next.next, node.prev, node.next, nextNext.prev] = [next, prev, node, next, nextNext, node];
+        [prev.next, next.prev, next.next, node.prev, node.next, nextNext.prev] = [
+          next,
+          prev,
+          node,
+          next,
+          nextNext,
+          node,
+        ];
       }
-      for (let i = 0; i > node.val; i--) {
+      for (let i = 0; i > limit; i--) {
         const { prev, next } = node;
         const prevPrev = prev.prev;
         // prev.prev, prev, node, next -> prev.prev, node, prev, next
-        [prevPrev.next, node.prev, node.next, prev.prev, prev.next, next.prev] = [node, prevPrev, prev, node, next, prev];
+        [prevPrev.next, node.prev, node.next, prev.prev, prev.next, next.prev] = [
+          node,
+          prevPrev,
+          prev,
+          node,
+          next,
+          prev,
+        ];
       }
     }
-    node = head;
-    while (node.val !== 0) {
+    return head;
+  }
+
+  private sum(head: Node) {
+    let node = head;
+    const set = new Set<Node>();
+    while (!set.has(node)) {
+      if (node.val === 0) {
+        head = node;
+      }
+      set.add(node);
       node = node.next;
     }
     const indexSet = new Set([1_000 % set.size, 2_000 % set.size, 3_000 % set.size]);
     let sum = 0;
     for (let i = 0; i < set.size; i++) {
       if (indexSet.has(i)) {
-        sum += node.val;
+        sum += head.val;
       }
-      node = node.next;
+      head = head.next;
     }
     return sum;
   }
@@ -56,7 +102,7 @@ class Solution {
       set.add(node);
       node = node.next;
     }
-    console.log(nums.join(', '))
+    console.log(nums.join(', '));
   }
 
   private parse(): Node {
@@ -74,4 +120,5 @@ class Solution {
   }
 }
 
-console.log(new Solution().solve1());
+// console.log(new Solution().solve1());
+console.log(new Solution().solve2());
