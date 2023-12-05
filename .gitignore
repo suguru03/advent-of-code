@@ -113,3 +113,7 @@ dist
 !.yarn/versions
 
 .idea
+
+# C#
+bin
+obj
