@@ -11,7 +11,6 @@ public class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
-            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
