@@ -20,7 +20,7 @@ public class Solution : SolutionBase
     {
         foreach (var maps in data.MapsList)
         {
-            maps.Sort((m1, m2) => (int)(m1.From - m2.From));
+            maps.Sort((m1, m2) => m1.From.CompareTo(m2.From));
         }
 
         var min = long.MaxValue;
@@ -29,7 +29,7 @@ public class Solution : SolutionBase
             var cur = seed;
             foreach (var maps in data.MapsList)
             {
-                Console.WriteLine($"--");
+                // Console.WriteLine($"--");
                 foreach (var map in maps)
                 {
                     var left = map.From;
@@ -43,10 +43,10 @@ public class Solution : SolutionBase
                     break;
                 }
 
-                Console.WriteLine($"cur: {cur}");
+                // Console.WriteLine($"cur: {cur}");
             }
 
-            Console.WriteLine($"seed: {seed}, num: {cur}");
+            // Console.WriteLine($"seed: {seed}, num: {cur}");
             min = Math.Min(min, cur);
         }
 
@@ -55,29 +55,59 @@ public class Solution : SolutionBase
 
     private static long Solve2(Data data)
     {
-        // var seeds2 = data.Seeds.ToList();
+        // Solve1(new Data(new List<long> { 837883389 }, data.MapsList));
+        // return 0;
+        var seeds = data.Seeds.ToList();
+        var seedRanges = new List<SeedRange>();
+        for (var i = 0; i < seeds.Count / 2; i += 2)
+        {
+            seedRanges.Add(new SeedRange(seeds[i], seeds[i] + seeds[i + 1]));
+        }
+
+        var seeds2 = data.Seeds.ToList();
         // var nextSeeds = new List<long>();
         // var nextSeeds = new List<long> { 24799538, 1636419363 };
+        // var min = long.MaxValue;
         // for (var i = 0; i < seeds2.Count / 2; i += 2)
         // {
-        //     for (var j = seeds2[i]; j < seeds2[i] + seeds2[i + 1]; j++)
-        //     {
-        //         nextSeeds.Add(j);
-        //     }
+        //     min = Math.Min(min, seeds2[i]);
         // }
 
-        // var nextSeeds = new List<long> { 24799538 };
-        // return Solve1(new Data(nextSeeds, data.MapsList));
+        // 12996718, 3701668790,|| 12950548, 3701622620
+        // var target = 3274577479L;
+        // var target = 1296352523L;
+        // var target = 54576670;
+        // var target = 148041808; // result for input2
+        var target = -1;
+        // var minTarget = 0L;
+        // var min2 = long.MaxValue;
+        // for (var i = 0; i < seedRanges.Count; i++)
+        // {
+        //     var seedRange = seedRanges[i];
+        //     for (var j = seedRange.From; j < seedRange.To; j++)
+        //     {
+        //         var nextSeeds = new List<long> { j };
+        //         var res = Solve1(new Data(nextSeeds, data.MapsList));
+        //         if (res < min2)
+        //         {
+        //             minTarget = j;
+        //             min2 = res;
+        //         }
+        //
+        //         Console.WriteLine($"seed: {i} - {j} minSeed: {minTarget}, minLoc: {min2}, {min2 < target}");
+        //     }
+        // }
+        //
+        // return 0;
 
         foreach (var maps in data.MapsList)
         {
-            maps.Sort((m1, m2) => (int)(m1.Destination - m2.Destination));
+            maps.Sort((m1, m2) => m1.Destination.CompareTo(m2.Destination));
         }
 
         // var target = -1;
-        var target = 3274577479;
         var mapsList = new List<List<MapData>>();
-        var maxValue = data.MapsList.SelectMany(item => item).Select(item => item.Destination + item.Range).Max();
+        var maxValue = data.MapsList.SelectMany(item => item).Select(item => item.Destination + item.Range + 1).Max();
         foreach (var maps in data.MapsList)
         {
             var left = 0L;
@@ -122,21 +152,17 @@ public class Solution : SolutionBase
         foreach (var maps in mapsList)
         {
             Console.WriteLine($"--");
+            var right = 0L;
             foreach (var map in maps)
             {
-                Console.WriteLine($"{map.Destination}, {map.From}, {map.Range}");
+                Console.WriteLine($"{map.Destination}, {map.From}, {map.Range} {map.Destination == right}");
+                right = map.Destination + map.Range;
             }
         }
 
-        var seeds = data.Seeds.ToList();
-        var seedRanges = new List<SeedRange>();
-        for (var i = 0; i < seeds.Count / 2; i += 2)
-        {
-            seedRanges.Add(new SeedRange(seeds[i], seeds[i] + seeds[i + 1]));
-        }
-
         // 3274577479 too high
-        var (minSeed, _, resultList) = FindMin(mapsList.Count, new MapData(1, 0, maxValue), mapsList, seedRanges);
+        var (minSeed, _, resultList) = FindMin(mapsList.Count, new MapData(0, 0, maxValue), mapsList, seedRanges);
+        Console.WriteLine($"seed: {minSeed}");
         return Solve1(new Data(new List<long> { minSeed }, data.MapsList));
     }
 
@@ -148,7 +174,7 @@ public class Solution : SolutionBase
         {
             foreach (var seed in seedRanges)
             {
-                if (seed.From >= prev.From + prev.Range || seed.To < prev.From)
+                if (seed.From >= prev.From + prev.Range || seed.To <= prev.From)
                 {
                     continue;
                 }
@@ -167,14 +193,29 @@ public class Solution : SolutionBase
         Console.WriteLine($"prev: {prev.Destination}, {prev.From}, {prev.Range}");
 
         var maps = mapsList[--mapsIndex];
+        var prevRight = 0L;
         foreach (var map in maps)
         {
             var left = map.Destination;
             var right = left + map.Range;
+            if (prevRight != left)
+            {
+                prevRight = prevRight;
+            }
+
+            prevRight = right;
             if (left >= prev.From + prev.Range || right <= prev.From)
             {
                 continue;
             }
+
+            // 6: 148041808, 368999739, 1
+            // 5: 196718861, 1310765426, 316320664 -> 368999739, 1483046304, 1
+            // 4: 1326100451, 1114082357, 234187965 -> 1483046304, 1271028210, 1
+            // 3: 1271028210, 1253957270, 39538107 -> 1271028210, 1253957270, 1
+            // 2: 1231231560, 3043631916, 264647972 -> 1253957270, 3066357626, 1
+            // 1: 2987089260, 956586242, 546778916 -> 3066357626, 1035854608, 1
+            // 0: 1005501175, 953364929, 249907715 -> 1035854608, 983718362, 1
 
 
             // 0, 69, 1 - 1, 0, 69
@@ -187,9 +228,7 @@ public class Solution : SolutionBase
             Console.WriteLine($"next: {nextDestination}, {nextFrom}, {nextRange}");
             // 0, 69, 1 - 1, 0, 55
             var next = new MapData(nextDestination, nextFrom, nextRange);
-            var (result, seedOffset, list) = FindMin(mapsIndex, new MapData(nextDestination, nextFrom, nextRange),
-                mapsList,
-                seedRanges);
+            var (result, seedOffset, list) = FindMin(mapsIndex, next, mapsList, seedRanges);
             if (result != -1)
             {
                 list.Add(new List<MapData> { next });
@@ -202,7 +241,7 @@ public class Solution : SolutionBase
 
     private Data Parse(bool useExample)
     {
-        return ParseText<Data>(useExample ? "example.txt" : "input.txt", row =>
+        return ParseText<Data>(useExample ? "example.txt" : "input2.txt", row =>
         {
             var rows = row.Split('\n');
             var seeds = Regex.Match(rows[0], "seeds: (.+)").Groups[1].Value.Trim().Split(" ").Select(long.Parse);
