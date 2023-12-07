@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using advent_of_code.Common;
 
 namespace advent_of_code._2023.day6;
@@ -11,26 +10,33 @@ public class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
 
     private static long Solve1(IEnumerable<Data> data)
     {
-        return data.Aggregate(1, (acc, data) =>
+        return data.Aggregate(1, (acc, row) =>
         {
             var records = 0;
-            for (var t = 1; t < data.Time; t++)
+            for (var t = 1; t < row.Time; t++)
             {
-                var distance = t * (data.Time - t);
-                if (distance > data.Distance)
-                {
-                    records++;
-                }
+                var distance = t * (row.Time - t);
+                records += Convert.ToInt32(distance > row.Distance);
             }
 
             return acc * records;
         });
+    }
+
+    private static long Solve2(IEnumerable<Data> input)
+    {
+        var list = input.ToList();
+        var data = new Data(Converter(list.Select(d => d.Time)), Converter(list.Select(d => d.Distance)));
+        return Solve1(new List<Data> { data });
+
+        long Converter(IEnumerable<long> nums) => long.Parse(string.Join("", nums.Select(num => num.ToString())));
     }
 
     private IEnumerable<Data> Parse(bool useExample)
@@ -38,28 +44,21 @@ public class Solution : SolutionBase
         return ParseText<IEnumerable<Data>>(useExample ? "example.txt" : "input.txt", text =>
         {
             var rows = text.Trim().Split("\n");
-
             var times = Parser(rows[0]);
             var distances = Parser(rows[1]);
-            var arr = new Data[times.Count];
-            for (var i = 0; i < times.Count; i++)
-            {
-                arr[i] = new Data(times[i], distances[i]);
-            }
+            return times.Select((time, i) => new Data(time, distances[i]));
 
-            return arr;
-
-            List<int> Parser(string text) => text.Split(":")[1].Trim().Split(" ")
-                .Where(str => !string.IsNullOrEmpty(str)).Select(int.Parse).ToList();
+            List<long> Parser(string row) => row.Split(":")[1].Trim().Split(" ")
+                .Where(str => !string.IsNullOrEmpty(str)).Select(long.Parse).ToList();
         });
     }
 
     private class Data
     {
-        public int Time { get; }
-        public int Distance { get; }
+        public long Time { get; }
+        public long Distance { get; }
 
-        public Data(int time, int distance)
+        public Data(long time, long distance)
         {
             Time = time;
             Distance = distance;
