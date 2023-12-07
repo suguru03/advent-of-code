@@ -17,24 +17,26 @@ public class Solution : SolutionBase
 
     private static long Solve1(IEnumerable<Data> data)
     {
-        return data.Aggregate(1, (acc, row) =>
-        {
-            var records = 0;
-            for (var t = 1; t < row.Time; t++)
-            {
-                var distance = t * (row.Time - t);
-                records += Convert.ToInt32(distance > row.Distance);
-            }
+        return data.Aggregate(1, (acc, row) => acc * GetRecords(row));
+    }
 
-            return acc * records;
-        });
+    private static int GetRecords(Data row)
+    {
+        var records = 0;
+        for (var t = 1; t < row.Time; t++)
+        {
+            var distance = t * (row.Time - t);
+            records += Convert.ToInt32(distance > row.Distance);
+        }
+
+        return records;
     }
 
     private static long Solve2(IEnumerable<Data> input)
     {
         var list = input.ToList();
         var data = new Data(Converter(list.Select(d => d.Time)), Converter(list.Select(d => d.Distance)));
-        return Solve1(new List<Data> { data });
+        return GetRecords(data);
 
         long Converter(IEnumerable<long> nums) => long.Parse(string.Join("", nums.Select(num => num.ToString())));
     }
