@@ -51,6 +51,8 @@ public class Solution : SolutionBase
     {
         var list = data.Select(row =>
         {
+            var max = 0;
+            var maxHand = 0;
             var cardCountMap = row.Hands.Aggregate(new Dictionary<int, int>(), (dict, hand) =>
             {
                 if (dict.ContainsKey(hand))
@@ -62,10 +64,25 @@ public class Solution : SolutionBase
                     dict[hand] = 1;
                 }
 
+                if (dict[hand] <= max || hand == 11)
+                {
+                    return dict;
+                }
+
+                max = dict[hand];
+                maxHand = hand;
                 return dict;
             });
-            return (data: row, handType: GetHandTypeWithJack(cardCountMap),
-                numOfJack: cardCountMap.TryGetValue(11, out var n) ? n : 0);
+
+            cardCountMap.TryGetValue(11, out var jack);
+            if (jack is 0 or 5)
+            {
+                return (data: row, handType: GetHandType(cardCountMap));
+            }
+
+            cardCountMap.Remove(11);
+            cardCountMap[maxHand] += jack;
+            return (data: row, handType: GetHandType(cardCountMap));
         });
 
         return Sum(list, hand => hand switch
@@ -74,56 +91,6 @@ public class Solution : SolutionBase
             11 => 0,
             _ => hand
         });
-    }
-
-
-    private static HandType GetHandTypeWithJack(IDictionary<int, int> cardCountMap)
-    {
-        var jack = cardCountMap.TryGetValue(11, out var j) ? j : 0;
-        cardCountMap.Remove(11);
-        if (jack == 5)
-        {
-            return HandType.FiveOfAKind;
-        }
-
-        var cardsMap = cardCountMap.GroupBy(kvp => kvp.Value, kvp => kvp.Key).ToDictionary(g => g.Key);
-        for (var i = 0; i <= jack; i++)
-        {
-            if (cardsMap.ContainsKey(5 - i))
-            {
-                return HandType.FiveOfAKind;
-            }
-        }
-
-        for (var i = 0; i <= jack; i++)
-        {
-            if (cardsMap.ContainsKey(4 - i))
-            {
-                return HandType.FourOfAKind;
-            }
-        }
-
-        if (jack == 0 && cardsMap.ContainsKey(3))
-        {
-            return cardsMap.ContainsKey(2) ? HandType.FullHouse : HandType.ThreeOfAKind;
-        }
-
-        if (jack == 1 && cardsMap.TryGetValue(2, out var list))
-        {
-            return list.Count() == 2 ? HandType.FullHouse : HandType.ThreeOfAKind;
-        }
-
-        if (jack == 2)
-        {
-            return HandType.ThreeOfAKind;
-        }
-
-        if (cardsMap.TryGetValue(2, out list))
-        {
-            return list.Count() == 2 || jack == 1 ? HandType.TwoPair : HandType.OnePair;
-        }
-
-        return jack == 1 ? HandType.OnePair : HandType.HighCard;
     }
 
     private static int Sum(IEnumerable<(Data data, HandType handType)> enumerable, Func<int, int> handConverter)
@@ -148,43 +115,6 @@ public class Solution : SolutionBase
 
             return 0;
         });
-
-        return list.Select((t, i) => t.data.Bit * (i + 1)).Sum();
-    }
-
-    private static int Sum(IEnumerable<(Data data, HandType handType, int numOfJack)> enumerable,
-        Func<int, int> handConverter)
-    {
-        var list = enumerable.ToList();
-        list.Sort((d1, d2) =>
-        {
-            if (d1.handType != d2.handType)
-            {
-                return d1.handType.CompareTo(d2.handType);
-            }
-
-            if (d1.numOfJack != d2.numOfJack)
-            {
-                return d2.numOfJack.CompareTo(d1.numOfJack);
-            }
-
-            for (var i = 0; i < d1.data.Hands.Length; i++)
-            {
-                var left = handConverter(d1.data.Hands[i]);
-                var right = handConverter(d2.data.Hands[i]);
-                if (left != right)
-                {
-                    return left.CompareTo(right);
-                }
-            }
-
-            return 0;
-        });
-        foreach (var data in list)
-        {
-            Console.WriteLine(
-                $"{data.handType}, {string.Join(",", data.data.Hands.Select(n => n switch { 1 => "A", 10 => "T", 11 => "J", 12 => "Q", 13 => "K", _ => n.ToString() }))}");
-        }
 
         return list.Select((t, i) => t.data.Bit * (i + 1)).Sum();
     }
