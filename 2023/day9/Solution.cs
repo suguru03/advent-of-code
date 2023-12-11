@@ -10,6 +10,7 @@ public class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
@@ -47,6 +48,11 @@ public class Solution : SolutionBase
         }
 
         return sum;
+    }
+
+    private static int Solve2(IEnumerable<IEnumerable<int>> data)
+    {
+        return Solve1(data.ToList().Select(row => row.Reverse()));
     }
 
     private IEnumerable<IEnumerable<int>> Parse(bool useExample)
