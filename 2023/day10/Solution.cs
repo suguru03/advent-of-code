@@ -6,13 +6,21 @@ public class Solution : SolutionBase
 {
     public override object Run(int part, bool useExample)
     {
-        var input = Parse(useExample);
+        var input = Parse(part, useExample);
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
+
+
+    private const char Unknown = '?';
+    private const char Ground = '.';
+    private const char Wall = '■';
+    private const char InLoop = 'I';
+    private const char OutOfLoop = 'O';
 
     private static int Solve1(IReadOnlyList<char[]> grid)
     {
@@ -25,7 +33,7 @@ public class Solution : SolutionBase
             while (queue.Count > 0)
             {
                 var (from, cur) = queue.Dequeue();
-                if (!ValidPosition(grid, cur.x, cur.y))
+                if (!ValidPosition(grid, cur))
                 {
                     continue;
                 }
@@ -108,7 +116,7 @@ public class Solution : SolutionBase
                     }
                 }
 
-                grid[cur.y][cur.x] = '.';
+                Fill(grid, cur, Ground);
             }
 
             if (next.Count > 0)
@@ -123,6 +131,130 @@ public class Solution : SolutionBase
         }
 
         return depth;
+    }
+
+    private static int Solve2(IReadOnlyList<char[]> data)
+    {
+        var grid = string.Join($"\n{new string(Unknown, data[0].Length * 2 - 1)}\n",
+            data.Select(list => string.Join(Unknown, list))).Split("\n").Select(row => row.ToCharArray()).ToList();
+        var queue = new Queue<((int x, int y) from, (int x, int y) current)>();
+        queue.Enqueue(((-1, -1), FindStart(grid)));
+        while (queue.Count > 0)
+        {
+            var (from, cur) = queue.Dequeue();
+            if (!ValidPosition(grid, cur))
+            {
+                continue;
+            }
+
+            switch (grid[cur.y][cur.x])
+            {
+                case 'S':
+                {
+                    queue.Enqueue((cur, (cur.x - 2, cur.y)));
+                    queue.Enqueue((cur, (cur.x + 2, cur.y)));
+                    queue.Enqueue((cur, (cur.x, cur.y - 2)));
+                    queue.Enqueue((cur, (cur.x, cur.y + 2)));
+                    Fill(grid, cur, Wall);
+                    continue;
+                }
+                case '|':
+                {
+                    if (cur.x != from.x)
+                    {
+                        continue;
+                    }
+
+                    queue.Enqueue((cur, (cur.x, cur.y - 2)));
+                    queue.Enqueue((cur, (cur.x, cur.y + 2)));
+                    break;
+                }
+                case '-':
+                {
+                    if (cur.y != from.y)
+                    {
+                        continue;
+                    }
+
+                    queue.Enqueue((cur, (cur.x - 2, cur.y)));
+                    queue.Enqueue((cur, (cur.x + 2, cur.y)));
+                    break;
+                }
+                case 'L':
+                {
+                    if (cur.x + 2 != from.x && cur.y - 2 != from.y)
+                    {
+                        continue;
+                    }
+
+                    queue.Enqueue((cur, (cur.x + 2, cur.y)));
+                    queue.Enqueue((cur, (cur.x, cur.y - 2)));
+                    break;
+                }
+                case 'J':
+                {
+                    if (cur.x - 2 != from.x && cur.y - 2 != from.y)
+                    {
+                        continue;
+                    }
+
+                    queue.Enqueue((cur, (cur.x - 2, cur.y)));
+                    queue.Enqueue((cur, (cur.x, cur.y - 2)));
+                    break;
+                }
+                case '7':
+                {
+                    if (cur.x - 2 != from.x && cur.y + 2 != from.y)
+                    {
+                        continue;
+                    }
+
+                    queue.Enqueue((cur, (cur.x - 2, cur.y)));
+                    queue.Enqueue((cur, (cur.x, cur.y + 2)));
+                    break;
+                }
+                case 'F':
+                {
+                    if (cur.x + 2 != from.x && cur.y + 2 != from.y)
+                    {
+                        continue;
+                    }
+
+                    queue.Enqueue((cur, (cur.x + 2, cur.y)));
+                    queue.Enqueue((cur, (cur.x, cur.y + 2)));
+                    break;
+                }
+            }
+
+            Fill(grid, cur, Wall);
+            FillMid(grid, from, cur, Wall);
+        }
+
+        var count = 0;
+        for (var y = 0; y < grid.Count; y += 2)
+        {
+            for (var x = 0; x < grid[y].Length; x += 2)
+            {
+                switch (grid[y][x])
+                {
+                    case Wall:
+                    case InLoop:
+                    case OutOfLoop:
+                    {
+                        continue;
+                    }
+                }
+
+                var cur = (x, y);
+                var isInLoop = IsInLoop(grid, new HashSet<(int x, int y)>(), cur);
+                var mark = isInLoop ? InLoop : OutOfLoop;
+                FillGrid(grid, cur, mark);
+                grid[y][x] = mark;
+                count += Convert.ToInt32(isInLoop);
+            }
+        }
+
+        return count;
     }
 
     private static (int, int) FindStart(IReadOnlyList<char[]> grid)
@@ -141,18 +273,92 @@ public class Solution : SolutionBase
         return (-1, -1);
     }
 
-    private static bool ValidPosition(IReadOnlyList<char[]> grid, int x, int y)
+    private static bool ValidPosition(IReadOnlyList<char[]> grid, (int x, int y) cur)
     {
-        if (y < 0 || y >= grid.Count || x < 0 || x >= grid[y].Length)
+        var (x, y) = cur;
+        return y >= 0 && y < grid.Count && x >= 0 && x < grid[y].Length;
+    }
+
+    private static bool IsInLoop(IReadOnlyList<char[]> grid, ISet<(int x, int y)> seen, (int x, int y) cur)
+    {
+        if (!ValidPosition(grid, cur))
         {
             return false;
         }
 
-        return grid[y][x] != '.';
+        if (seen.Contains(cur))
+        {
+            return true;
+        }
+
+        seen.Add(cur);
+        var (x, y) = cur;
+        switch (grid[y][x])
+        {
+            case Wall:
+            case InLoop:
+            {
+                return true;
+            }
+            case OutOfLoop:
+            {
+                return false;
+            }
+        }
+
+        return IsInLoop(grid, seen, (x - 1, y)) &&
+               IsInLoop(grid, seen, (x + 1, y)) &&
+               IsInLoop(grid, seen, (x, y - 1)) &&
+               IsInLoop(grid, seen, (x, y + 1));
     }
 
-    private char[][] Parse(bool useExample)
+    private static void FillGrid(IReadOnlyList<char[]> grid, (int x, int y) cur, char c)
     {
-        return ParseLines<char[]>(useExample ? "example.txt" : "input.txt", text => text.ToCharArray()).ToArray();
+        if (!ValidPosition(grid, cur))
+        {
+            return;
+        }
+
+        var (x, y) = cur;
+        switch (grid[y][x])
+        {
+            case Wall:
+            case InLoop:
+            case OutOfLoop:
+            {
+                return;
+            }
+            case Unknown:
+            {
+                grid[y][x] = c;
+                break;
+            }
+        }
+
+        FillGrid(grid, (x - 1, y), c);
+        FillGrid(grid, (x + 1, y), c);
+        FillGrid(grid, (x, y - 1), c);
+        FillGrid(grid, (x, y + 1), c);
+    }
+
+    private static void Fill(IReadOnlyList<char[]> grid, int x, int y, char c)
+    {
+        grid[y][x] = c;
+    }
+
+    private static void Fill(IReadOnlyList<char[]> grid, (int x, int y) t, char c)
+    {
+        Fill(grid, t.x, t.y, c);
+    }
+
+    private static void FillMid(IReadOnlyList<char[]> grid, (int x, int y) from, (int x, int y) to, char c)
+    {
+        Fill(grid, from.x + (to.x - from.x) / 2, from.y + (to.y - from.y) / 2, c);
+    }
+
+    private char[][] Parse(int part, bool useExample)
+    {
+        return ParseLines<char[]>(useExample ? $"example{part}.txt" : "input.txt", text => text.ToCharArray())
+            .ToArray();
     }
 }
