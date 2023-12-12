@@ -32,18 +32,16 @@ public class Solution : SolutionBase
         var xSet = new HashSet<int>();
         var ySet = new HashSet<int>();
         for (var y = 0; y < grid.Count; y++)
+        for (var x = 0; x < grid[y].Count; x++)
         {
-            for (var x = 0; x < grid[y].Count; x++)
+            if (grid[y][x] != '#')
             {
-                if (grid[y][x] != '#')
-                {
-                    continue;
-                }
-
-                galaxies.Add((x, y));
-                xSet.Add(x);
-                ySet.Add(y);
+                continue;
             }
+
+            galaxies.Add((x, y));
+            xSet.Add(x);
+            ySet.Add(y);
         }
 
         return Sum(0);
