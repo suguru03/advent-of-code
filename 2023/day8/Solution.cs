@@ -23,23 +23,8 @@ public class Solution : SolutionBase
 
     private static long Solve2(Data data)
     {
-        return data.NodeMap.Keys.Where(key => key.EndsWith("A"))
-            .Select(id => Count(data, id, currentId => currentId.EndsWith("Z"))).Aggregate(1L, LCM);
-    }
-
-    private static long GCD(long a, long b)
-    {
-        while (b != 0)
-        {
-            (a, b) = (b, a % b);
-        }
-
-        return a;
-    }
-
-    private static long LCM(long a, long b)
-    {
-        return (a * b) / GCD(a, b);
+        return data.NodeMap.Keys.Where(key => key.EndsWith('A'))
+            .Select(id => Count(data, id, currentId => currentId.EndsWith('Z'))).Aggregate(1L, Utils.Math.Lcm);
     }
 
     private static long Count(Data data, string currentId, Func<string, bool> isEnd)
