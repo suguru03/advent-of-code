@@ -232,26 +232,24 @@ public class Solution : SolutionBase
 
         var count = 0;
         for (var y = 0; y < grid.Count; y += 2)
+        for (var x = 0; x < grid[y].Length; x += 2)
         {
-            for (var x = 0; x < grid[y].Length; x += 2)
+            switch (grid[y][x])
             {
-                switch (grid[y][x])
+                case Wall:
+                case InLoop:
+                case OutOfLoop:
                 {
-                    case Wall:
-                    case InLoop:
-                    case OutOfLoop:
-                    {
-                        continue;
-                    }
+                    continue;
                 }
-
-                var cur = (x, y);
-                var isInLoop = IsInLoop(grid, new HashSet<(int x, int y)>(), cur);
-                var mark = isInLoop ? InLoop : OutOfLoop;
-                FillGrid(grid, cur, mark);
-                grid[y][x] = mark;
-                count += Convert.ToInt32(isInLoop);
             }
+
+            var cur = (x, y);
+            var isInLoop = IsInLoop(grid, new HashSet<(int x, int y)>(), cur);
+            var mark = isInLoop ? InLoop : OutOfLoop;
+            FillGrid(grid, cur, mark);
+            grid[y][x] = mark;
+            count += Convert.ToInt32(isInLoop);
         }
 
         return count;
@@ -260,13 +258,11 @@ public class Solution : SolutionBase
     private static (int, int) FindStart(IReadOnlyList<char[]> grid)
     {
         for (var y = 0; y < grid.Count; y++)
+        for (var x = 0; x < grid[y].Length; x++)
         {
-            for (var x = 0; x < grid[y].Length; x++)
+            if (grid[y][x] == 'S')
             {
-                if (grid[y][x] == 'S')
-                {
-                    return (x, y);
-                }
+                return (x, y);
             }
         }
 
