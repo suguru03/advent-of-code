@@ -7,23 +7,48 @@ public class Solution : SolutionBase
 {
     public override object Run(int part, bool useExample)
     {
-        var input = Parse(useExample);
+        var input = Parse(part, useExample);
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
 
-    private static int Solve1(Data data)
+    private static long Solve1(Data data)
+    {
+        return Count(data, "AAA", currentId => currentId == "ZZZ");
+    }
+
+    private static long Solve2(Data data)
+    {
+        return data.NodeMap.Keys.Where(key => key.EndsWith("A"))
+            .Select(id => Count(data, id, currentId => currentId.EndsWith("Z"))).Aggregate(1L, LCM);
+    }
+
+    private static long GCD(long a, long b)
+    {
+        while (b != 0)
+        {
+            (a, b) = (b, a % b);
+        }
+
+        return a;
+    }
+
+    private static long LCM(long a, long b)
+    {
+        return (a * b) / GCD(a, b);
+    }
+
+    private static long Count(Data data, string currentId, Func<string, bool> isEnd)
     {
         var instruction = data.Instruction;
         var nodeMap = data.NodeMap;
         var index = -1;
         var count = 0;
-        var currentId = "AAA";
-        const string endId = "ZZZ";
-        while (currentId != endId)
+        while (!isEnd(currentId))
         {
             count++;
             index = (index + 1) % instruction.Length;
@@ -34,9 +59,9 @@ public class Solution : SolutionBase
         return count;
     }
 
-    private Data Parse(bool useExample)
+    private Data Parse(int part, bool useExample)
     {
-        return ParseText<Data>(useExample ? "example.txt" : "input.txt", text =>
+        return ParseText<Data>(useExample ? $"example{part}.txt" : "input.txt", text =>
         {
             var rows = text.Trim().Split("\n");
             var instruction = rows[0].Trim();
