@@ -10,11 +10,22 @@ public class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
 
-    private static int Solve1(IEnumerable<IEnumerable<char>> data)
+    private static long Solve1(IEnumerable<IEnumerable<char>> data)
+    {
+        return SumOfDistances(data, 2);
+    }
+
+    private static long Solve2(IEnumerable<IEnumerable<char>> data)
+    {
+        return SumOfDistances(data, 1_000_000);
+    }
+
+    private static long SumOfDistances(IEnumerable<IEnumerable<char>> data, long emptyDistance)
     {
         var grid = data.Select(row => row.ToList()).ToList();
         var galaxies = new List<(int x, int y)>();
@@ -37,14 +48,14 @@ public class Solution : SolutionBase
 
         return Sum(0);
 
-        int Sum(int left)
+        long Sum(int left)
         {
             if (left == galaxies.Count - 1)
             {
                 return 0;
             }
 
-            var sum = 0;
+            var sum = 0L;
             var right = left;
             while (++right < galaxies.Count)
             {
@@ -55,15 +66,14 @@ public class Solution : SolutionBase
 
             return sum + Sum(left + 1);
 
-            int Diff(int l, int y, ICollection<int> set)
+            long Diff(int l, int y, ICollection<int> set)
             {
                 var d = Math.Sign(y - l);
-                var diff = 0;
+                var diff = 0L;
                 while (l != y)
                 {
                     l += d;
-                    diff++;
-                    diff += Convert.ToInt32(!set.Contains(l));
+                    diff += set.Contains(l) ? 1 : emptyDistance;
                 }
 
                 return diff;
