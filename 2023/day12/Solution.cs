@@ -7,10 +7,11 @@ public class Solution : SolutionBase
 {
     public override object Run(int part, bool useExample)
     {
-        var input = Parse(useExample);
+        var input = Parse(part, useExample);
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
@@ -39,7 +40,12 @@ public class Solution : SolutionBase
 
     private static long Solve1(IEnumerable<Data> data)
     {
-        return data.Select(row => Sum(row.Records, 0, row.Sizes, 0, new Dictionary<(int, int), int>())).Sum();
+        return Sum(data);
+    }
+
+    private static long Solve2(IEnumerable<Data> data)
+    {
+        return Sum(data);
     }
 
     private enum State
@@ -49,8 +55,13 @@ public class Solution : SolutionBase
         End,
     }
 
-    private static int Sum(IList<char> records, int rIndex, IList<int> sizes, int sIndex,
-        IDictionary<(int, int), int> cacheMap)
+    private static long Sum(IEnumerable<Data> data)
+    {
+        return data.Select(row => Sum(row.Records, 0, row.Sizes, 0, new Dictionary<(int, int), long>())).Sum();
+    }
+
+    private static long Sum(IList<char> records, int rIndex, IList<int> sizes, int sIndex,
+        IDictionary<(int, int), long> cacheMap)
     {
         if (rIndex == records.Count || sIndex == sizes.Count)
         {
@@ -63,7 +74,7 @@ public class Solution : SolutionBase
             return cache;
         }
 
-        var sum = 0;
+        var sum = 0L;
         var size = sizes[sIndex];
         var left = rIndex;
         var right = left;
@@ -120,11 +131,13 @@ public class Solution : SolutionBase
         return sum;
     }
 
-    private IEnumerable<Data> Parse(bool useExample)
+    private IEnumerable<Data> Parse(int part, bool useExample)
     {
         return ParseLines(useExample ? "example.txt" : "input.txt", text =>
         {
-            var items = text.Trim().Split(' ');
+            var items = text.Trim().Split(' ')
+                .Select((row, i) => string.Join(i == 0 ? '?' : ',', Enumerable.Repeat(row, part == 1 ? 1 : 5)))
+                .ToList();
             return new Data($"{items[0]}.".ToCharArray(), items[1].Split(',').Select(int.Parse).ToList());
         });
     }
