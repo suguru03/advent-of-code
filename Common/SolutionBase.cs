@@ -6,6 +6,11 @@ public abstract class SolutionBase
     public string RootPath { private get; set; } = "";
     public abstract object Run(int part, bool useExample);
 
+    public virtual void Test()
+    {
+        throw new NotImplementedException();
+    }
+
     private string ResolvePath(string filepath)
     {
         return $"{RootPath}/{filepath}";
