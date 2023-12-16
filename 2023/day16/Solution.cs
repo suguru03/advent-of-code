@@ -11,31 +11,63 @@ public class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
 
     private enum Direction
     {
-        Top,
+        Upward,
         Left,
-        Bottom,
+        Downward,
         Right,
     }
 
     private static readonly Dictionary<Direction, (int x, int y)> DeltaMap = new()
     {
-        { Direction.Top, (0, -1) },
+        { Direction.Upward, (0, -1) },
         { Direction.Left, (-1, 0) },
-        { Direction.Bottom, (0, 1) },
+        { Direction.Downward, (0, 1) },
         { Direction.Right, (1, 0) },
     };
 
     private static int Solve1(Data data)
     {
+        return Traverse(data, 0, 0, Direction.Right);
+    }
+
+    private static int Solve2(Data data)
+    {
+        var grid = data.Grid;
+        var max = 0;
+        var right = grid[0].Count - 1;
+        var bottom = data.Grid.Count - 1;
+        for (var x = 0; x <= right; x++)
+        {
+            Resolve(Traverse(data, x, 0, Direction.Downward));
+            Resolve(Traverse(data, x, bottom, Direction.Upward));
+        }
+        for (var y = 0; y <= bottom; y++)
+        {
+            Resolve(Traverse(data, 0, y, Direction.Right));
+            Resolve(Traverse(data, right, y, Direction.Left));
+        }
+
+        return max;
+
+        void Resolve(int value)
+        {
+            max = Math.Max(max, value);
+        }
+    }
+
+    private static int Traverse(Data data, int x, int y, Direction startDirection)
+    {
         var grid = data.Grid;
         var seen = grid.Select(row => row.Select(_ => new HashSet<Direction>()).ToList()).ToList();
-        Traverse(grid, -1, 0, Direction.Right, seen);
+        var delta = DeltaMap[startDirection];
+        Traverse(grid, x - delta.x, y - delta.y, startDirection, seen);
         return seen.SelectMany(row => row).Count(set => set.Count != 0);
     }
 
@@ -62,8 +94,8 @@ public class Solution : SolutionBase
             {
                 if (direction is Direction.Left or Direction.Right)
                 {
-                    Traverse(grid, x, y, Direction.Top, seen);
-                    Traverse(grid, x, y, Direction.Bottom, seen);
+                    Traverse(grid, x, y, Direction.Upward, seen);
+                    Traverse(grid, x, y, Direction.Downward, seen);
                     return;
                 }
 
@@ -71,7 +103,7 @@ public class Solution : SolutionBase
             }
             case '-':
             {
-                if (direction is Direction.Top or Direction.Bottom)
+                if (direction is Direction.Upward or Direction.Downward)
                 {
                     Traverse(grid, x, y, Direction.Left, seen);
                     Traverse(grid, x, y, Direction.Right, seen);
@@ -85,10 +117,10 @@ public class Solution : SolutionBase
             {
                 var nextDirection = direction switch
                 {
-                    Direction.Top => Direction.Right,
-                    Direction.Left => Direction.Bottom,
-                    Direction.Bottom => Direction.Left,
-                    Direction.Right => Direction.Top,
+                    Direction.Upward => Direction.Right,
+                    Direction.Left => Direction.Downward,
+                    Direction.Downward => Direction.Left,
+                    Direction.Right => Direction.Upward,
                     _ => throw new ArgumentOutOfRangeException(nameof(direction))
                 };
                 Traverse(grid, x, y, nextDirection, seen);
@@ -98,10 +130,10 @@ public class Solution : SolutionBase
             {
                 var nextDirection = direction switch
                 {
-                    Direction.Top => Direction.Left,
-                    Direction.Left => Direction.Top,
-                    Direction.Bottom => Direction.Right,
-                    Direction.Right => Direction.Bottom,
+                    Direction.Upward => Direction.Left,
+                    Direction.Left => Direction.Upward,
+                    Direction.Downward => Direction.Right,
+                    Direction.Right => Direction.Downward,
                     _ => throw new ArgumentOutOfRangeException(nameof(direction))
                 };
                 Traverse(grid, x, y, nextDirection, seen);
