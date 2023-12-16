@@ -92,16 +92,7 @@ public class Solution : SolutionBase
 
     private static bool HasSmudge(int a, int b)
     {
-        return BitCount(a ^ b) == 1;
-    }
-
-    private static int BitCount(int x)
-    {
-        x = ((x >> 1) & 0x55555555) + (x & 0x55555555);
-        x = ((x >> 2) & 0x33333333) + (x & 0x33333333);
-        x = ((x >> 4) & 0x0f0f0f0f) + (x & 0x0f0f0f0f);
-        x = ((x >> 8) & 0x00ff00ff) + (x & 0x00ff00ff);
-        return ((x >> 16) & 0x0000ffff) + (x & 0x0000ffff);
+        return Utils.Math.BitCount(a ^ b) == 1;
     }
 
     private IEnumerable<Data> Parse(bool useExample)
