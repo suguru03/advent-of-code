@@ -1,5 +1,4 @@
 using advent_of_code.Common;
-using ArgumentOutOfRangeException = System.ArgumentOutOfRangeException;
 
 namespace advent_of_code._2023.day16;
 
@@ -48,6 +47,7 @@ public class Solution : SolutionBase
             Resolve(Traverse(data, x, 0, Direction.Downward));
             Resolve(Traverse(data, x, bottom, Direction.Upward));
         }
+
         for (var y = 0; y <= bottom; y++)
         {
             Resolve(Traverse(data, 0, y, Direction.Right));
@@ -88,60 +88,38 @@ public class Solution : SolutionBase
         }
 
         seen[y][x].Add(direction);
-        switch (grid[y][x])
+        switch (grid[y][x], direction)
         {
-            case '|':
-            {
-                if (direction is Direction.Left or Direction.Right)
-                {
-                    Traverse(grid, x, y, Direction.Upward, seen);
-                    Traverse(grid, x, y, Direction.Downward, seen);
-                    return;
-                }
-
+            case ('|', Direction.Left):
+            case ('|', Direction.Right):
+                Traverse(grid, x, y, Direction.Upward, seen);
+                Traverse(grid, x, y, Direction.Downward, seen);
                 break;
-            }
-            case '-':
-            {
-                if (direction is Direction.Upward or Direction.Downward)
-                {
-                    Traverse(grid, x, y, Direction.Left, seen);
-                    Traverse(grid, x, y, Direction.Right, seen);
-                    return;
-                }
-
+            case ('-', Direction.Upward):
+            case ('-', Direction.Downward):
+                Traverse(grid, x, y, Direction.Left, seen);
+                Traverse(grid, x, y, Direction.Right, seen);
                 break;
-            }
-
-            case '/':
-            {
-                var nextDirection = direction switch
-                {
-                    Direction.Upward => Direction.Right,
-                    Direction.Left => Direction.Downward,
-                    Direction.Downward => Direction.Left,
-                    Direction.Right => Direction.Upward,
-                    _ => throw new ArgumentOutOfRangeException(nameof(direction))
-                };
-                Traverse(grid, x, y, nextDirection, seen);
-                return;
-            }
-            case '\\':
-            {
-                var nextDirection = direction switch
-                {
-                    Direction.Upward => Direction.Left,
-                    Direction.Left => Direction.Upward,
-                    Direction.Downward => Direction.Right,
-                    Direction.Right => Direction.Downward,
-                    _ => throw new ArgumentOutOfRangeException(nameof(direction))
-                };
-                Traverse(grid, x, y, nextDirection, seen);
-                return;
-            }
+            case ('/', Direction.Upward):
+            case ('\\', Direction.Downward):
+                Traverse(grid, x, y, Direction.Right, seen);
+                break;
+            case ('/', Direction.Left):
+            case ('\\', Direction.Right):
+                Traverse(grid, x, y, Direction.Downward, seen);
+                break;
+            case ('/', Direction.Downward):
+            case ('\\', Direction.Upward):
+                Traverse(grid, x, y, Direction.Left, seen);
+                break;
+            case ('/', Direction.Right):
+            case ('\\', Direction.Left):
+                Traverse(grid, x, y, Direction.Upward, seen);
+                break;
+            default:
+                Traverse(grid, x, y, direction, seen);
+                break;
         }
-
-        Traverse(grid, x, y, direction, seen);
     }
 
     private Data Parse(bool useExample)
