@@ -20,46 +20,43 @@ public class Solution : SolutionBase
 
     private static int Solve1(Data data)
     {
-        return data.List.Select(str => str.Aggregate(0, (sum, c) => (sum + c) * Multiplier % Divisor)).Sum();
+        return data.List.Sum(str => str.Aggregate(0, Hash));
+    }
+
+    private static int Hash(int sum, char c)
+    {
+        return (sum + c) * Multiplier % Divisor;
     }
 
     private static int Solve2(Data data)
     {
-        var boxes = new int[256].Select(_ => new List<(string key, int power)>()).ToList();
+        var boxMap = new Dictionary<int, Box>();
         foreach (var row in data.List)
         {
             var i = -1;
             var boxId = 0;
             while (++i < row.Length && row[i] is not ('=' or '-'))
             {
-                boxId = (boxId + row[i]) * Multiplier % Divisor;
+                boxId = Hash(boxId, row[i]);
             }
 
-            var box = boxes[boxId];
+            if (!boxMap.TryGetValue(boxId, out var box))
+            {
+                box = new Box(boxId);
+                boxMap.Add(boxId, box);
+            }
+
             var key = row[..i];
-            var index = box.FindIndex(item => item.key == key);
             if (row[i] == '-')
             {
-                if (index >= 0)
-                {
-                    box.RemoveAt(index);
-                }
-
+                box.Remove(key);
                 continue;
             }
 
-            var item = (key, int.Parse(row[(i + 1)..]));
-            if (index < 0)
-            {
-                box.Add(item);
-            }
-            else
-            {
-                box[index] = item;
-            }
+            box.Add(key, int.Parse(row[(i + 1)..]));
         }
 
-        return boxes.Select((l, boxId) => l.Select((i, slot) => (boxId + 1) * (slot + 1) * i.power).Sum()).Sum();
+        return boxMap.Values.Sum(box => box.GetTotalPower());
     }
 
     private Data Parse(bool useExample)
@@ -67,5 +64,45 @@ public class Solution : SolutionBase
         return new Data(ParseText(useExample ? "example.txt" : "input.txt", text => text.Trim().Split(',')));
     }
 
-    private readonly record struct Data(IEnumerable<string> List);
+    private record Data(IEnumerable<string> List);
+
+    private record Box(int BoxId)
+    {
+        private readonly List<(string key, int power)> items = new();
+
+        public void Remove(string key)
+        {
+            var index = FindIndex(key);
+            if (index < 0)
+            {
+                return;
+            }
+
+            items.RemoveAt(index);
+        }
+
+        public void Add(string key, int power)
+        {
+            var item = (key, power);
+            var index = FindIndex(key);
+            if (index < 0)
+            {
+                items.Add(item);
+            }
+            else
+            {
+                items[index] = item;
+            }
+        }
+
+        public int GetTotalPower()
+        {
+            return items.Select((item, slot) => (BoxId + 1) * (slot + 1) * item.power).Sum();
+        }
+
+        private int FindIndex(string key)
+        {
+            return items.FindIndex(item => item.key == key);
+        }
+    }
 }
