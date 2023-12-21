@@ -49,62 +49,65 @@ public class Solution : SolutionBase
 
     private static int FindMin(IList<List<int>> grid, int minMove, int maxMove)
     {
-        var queue =
-            new PriorityQueue<(int x, int y, int sum, Direction direction, int count, HashSet<(int x, int y)> seen),
-                int>();
-        var memo = new Dictionary<(int x, int y, Direction direction, int count), int>();
-        queue.Enqueue((0, 0, 0, Direction.None, minMove, new HashSet<(int x, int y)> { (0, 0) }), 0);
-        var ty = grid.Count - 1;
-        var tx = grid[ty].Count - 1;
-        var min = (tx + ty) * 9;
+        var queue = new PriorityQueue<(State, int count), int>([((new State(0, 0, Direction.None, maxMove), 0), 0)]);
+        var costMap = new Dictionary<State, int>();
+        var goal = (x: grid.First().Count - 1, y: grid.Count - 1);
         while (queue.Count != 0)
         {
-            var (x, y, sum, direction, directionCount, seen) = queue.Dequeue();
-            if (sum >= min)
+            var (state, cost) = queue.Dequeue();
+            if (state.X == goal.x && state.Y == goal.y)
             {
-                continue;
-            }
-
-            if (x == tx && y == ty)
-            {
-                if (directionCount >= minMove)
-                {
-                    min = sum;
-                }
-
-                continue;
-            }
-
-            var memoKey = (x, y, direction, directionCount);
-            if (memo.TryGetValue(memoKey, out var prev) && sum >= prev)
-            {
-                continue;
-            }
-
-            memo[memoKey] = sum;
-
-            foreach (var (nextDirection, (dx, dy)) in DeltaMap)
-            {
-                if (directionCount < minMove && direction != nextDirection)
+                if (state.Count < minMove)
                 {
                     continue;
                 }
 
-                var nx = x + dx;
-                var ny = y + dy;
-                var nextCount = direction == nextDirection ? directionCount + 1 : 1;
-                if (!IsValidRange(grid, nx, ny) || nextCount > maxMove || seen.Contains((nx, ny)))
+                return cost;
+            }
+
+            if (costMap.TryGetValue(state, out var prev) && cost >= prev)
+            {
+                continue;
+            }
+
+            costMap[state] = cost;
+
+            foreach (var next in GetAdjacent(state, minMove, maxMove))
+            {
+                if (!IsValidRange(grid, next.X, next.Y))
                 {
                     continue;
                 }
 
-                var nextSum = sum + grid[ny][nx];
-                var nextSeen = new HashSet<(int x, int y)>(seen) { (nx, ny) };
-                queue.Enqueue((nx, ny, nextSum, nextDirection, nextCount, nextSeen), nextSum);
+                var nextSum = cost + grid[next.Y][next.X];
+                queue.Enqueue((next, nextSum), nextSum);
             }
         }
 
-        return min;
+        return -1;
+    }
+
+    private static IEnumerable<State> GetAdjacent(State state, int min, int max)
+    {
+        var (x, y, direction, count) = state;
+        var current = direction == Direction.None ? (dx: 0, dy: 0) : DeltaMap[direction];
+        if (count >= min)
+        {
+            foreach (var (nextDirection, (dx, dy)) in DeltaMap)
+            {
+                if ((current.dx ^ dx) != 1 && (current.dy ^ dy) != 1)
+                {
+                    continue;
+                }
+
+                yield return new State(x + dx, y + dy, nextDirection, 1);
+            }
+        }
+
+        if (count < max)
+        {
+            yield return new State(x + current.dx, y + current.dy, direction, count + 1);
+        }
     }
 
     private Data Parse(bool useExample)
@@ -113,5 +116,7 @@ public class Solution : SolutionBase
             .ToList());
     }
 
-    private readonly record struct Data(List<List<int>> Grid);
+    private record Data(List<List<int>> Grid);
+
+    private record State(int X, int Y, Direction Direction, int Count);
 }
