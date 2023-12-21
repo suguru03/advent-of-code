@@ -10,21 +10,19 @@ public class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
 
     private static int Solve1(Data data)
     {
-        var grid = data.Grid;
-        var ty = grid.Count - 1;
-        var tx = grid[0].Count - 1;
-        var memo = new Dictionary<(int x, int y), (int sum, Direction, int count)>
-        {
-            [(tx, ty)] = ((grid.Count + grid[0].Count) * 9, Direction.None, 0)
-        };
-        FindMin(grid, 0, 0, -grid[0][0], Direction.None, 0, memo, new HashSet<(int x, int y)>());
-        return memo[(tx, ty)].sum;
+        return FindMin(data.Grid, 0, 3);
+    }
+
+    private static int Solve2(Data data)
+    {
+        return FindMin(data.Grid, 4, 10);
     }
 
     private enum Direction
@@ -36,12 +34,12 @@ public class Solution : SolutionBase
         Right,
     }
 
-    private static readonly List<(Direction, int dx, int dy)> Deltas = new()
+    private static readonly Dictionary<Direction, ( int dx, int dy)> DeltaMap = new()
     {
-        (Direction.Right, 1, 0),
-        (Direction.Upward, 0, 1),
-        (Direction.Left, -1, 0),
-        (Direction.Downward, 0, -1),
+        { Direction.Right, (1, 0) },
+        { Direction.Upward, (0, 1) },
+        { Direction.Left, (-1, 0) },
+        { Direction.Downward, (0, -1) },
     };
 
     private static bool IsValidRange(IList<List<int>> grid, int x, int y)
@@ -49,69 +47,64 @@ public class Solution : SolutionBase
         return y >= 0 && y < grid.Count && x >= 0 && x < grid[y].Count;
     }
 
-
-    private static void FindMin(IList<List<int>> grid, int x, int y, int sum, Direction direction, int directionCount,
-        IDictionary<(int x, int y), (int sum, Direction direction, int count)> memo,
-        ISet<(int x, int y)> seen)
+    private static int FindMin(IList<List<int>> grid, int minMove, int maxMove)
     {
-        const int directionLimit = 3;
-        var seenKey = (x, y);
-        if (!IsValidRange(grid, x, y) || directionCount > directionLimit || seen.Contains(seenKey))
-        {
-            return;
-        }
-
-        sum += grid[y][x];
-        var tx = grid[y].Count - 1;
+        var queue =
+            new PriorityQueue<(int x, int y, int sum, Direction direction, int count, HashSet<(int x, int y)> seen),
+                int>();
+        var memo = new Dictionary<(int x, int y, Direction direction, int count), int>();
+        queue.Enqueue((0, 0, 0, Direction.None, minMove, new HashSet<(int x, int y)> { (0, 0) }), 0);
         var ty = grid.Count - 1;
-        var min = memo[(tx, ty)].sum;
-        if (sum >= min)
+        var tx = grid[ty].Count - 1;
+        var min = (tx + ty) * 9;
+        while (queue.Count != 0)
         {
-            return;
-        }
-
-        var memoKey = (x, y);
-        var cache = (sum, direction, directionCount);
-        if (memo.TryGetValue(memoKey, out var prev))
-        {
-            if (direction == prev.direction && directionCount == prev.count)
+            var (x, y, sum, direction, directionCount, seen) = queue.Dequeue();
+            if (sum >= min)
             {
-                if (sum >= prev.sum)
+                continue;
+            }
+
+            if (x == tx && y == ty)
+            {
+                if (directionCount >= minMove)
                 {
-                    return;
+                    min = sum;
                 }
+
+                continue;
             }
 
-            if (sum >= prev.sum + 9 * directionLimit / 2)
+            var memoKey = (x, y, direction, directionCount);
+            if (memo.TryGetValue(memoKey, out var prev) && sum >= prev)
             {
-                return;
+                continue;
             }
 
-            if (sum < prev.sum)
+            memo[memoKey] = sum;
+
+            foreach (var (nextDirection, (dx, dy)) in DeltaMap)
             {
-                memo[memoKey] = cache;
+                if (directionCount < minMove && direction != nextDirection)
+                {
+                    continue;
+                }
+
+                var nx = x + dx;
+                var ny = y + dy;
+                var nextCount = direction == nextDirection ? directionCount + 1 : 1;
+                if (!IsValidRange(grid, nx, ny) || nextCount > maxMove || seen.Contains((nx, ny)))
+                {
+                    continue;
+                }
+
+                var nextSum = sum + grid[ny][nx];
+                var nextSeen = new HashSet<(int x, int y)>(seen) { (nx, ny) };
+                queue.Enqueue((nx, ny, nextSum, nextDirection, nextCount, nextSeen), nextSum);
             }
         }
-        else
-        {
-            memo[memoKey] = cache;
-        }
 
-        if (x == tx && y == ty)
-        {
-            return;
-        }
-
-
-        seen.Add(seenKey);
-
-        foreach (var (nextDirection, dx, dy) in Deltas)
-        {
-            var nextCount = direction == nextDirection ? directionCount + 1 : 1;
-            FindMin(grid, x + dx, y + dy, sum, nextDirection, nextCount, memo, seen);
-        }
-
-        seen.Remove(seenKey);
+        return min;
     }
 
     private Data Parse(bool useExample)
