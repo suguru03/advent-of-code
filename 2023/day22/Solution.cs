@@ -11,6 +11,7 @@ public partial class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
@@ -18,6 +19,39 @@ public partial class Solution : SolutionBase
     private static int Solve1(IEnumerable<Cube> snapshot)
     {
         return Settle(snapshot).Count(cube => cube.Disintegrable);
+    }
+
+    private static int Solve2(IEnumerable<Cube> snapshot)
+    {
+        return Settle(snapshot).Skip(1).Where(cube => !cube.Disintegrable).Sum(CountSupporting);
+    }
+
+    private static int CountSupporting(Cube root)
+    {
+        var supportingMap = new Dictionary<Cube, bool>();
+        var stack = new Stack<Cube>(collection: [root]);
+        while (stack.Count != 0)
+        {
+            var cube = stack.Pop();
+            foreach (var next in cube.Supporting)
+            {
+                if (supportingMap.ContainsKey(next))
+                {
+                    continue;
+                }
+
+                var supported = next.IsSupported(root, supportingMap);
+                supportingMap.Add(next, !supported);
+                if (supported)
+                {
+                    continue;
+                }
+
+                stack.Push(next);
+            }
+        }
+
+        return supportingMap.Count(kvp => kvp.Value);
     }
 
     private static IEnumerable<Cube> Settle(IEnumerable<Cube> snapshot)
@@ -102,20 +136,22 @@ public partial class Solution : SolutionBase
 
     private record Cube(Coordinate From, Coordinate To)
     {
-        private readonly HashSet<Cube> _supporting = [];
+        private static readonly Dictionary<Cube, bool> Empty = new();
+        public readonly HashSet<Cube> Supporting = [];
         private readonly HashSet<Cube> _supported = [];
-        public bool Disintegrable => _supporting.All(cube => cube.IsSupported(this));
+        public bool Disintegrable => Supporting.All(cube => cube.IsSupported(this, Empty));
 
         public void Support(Cube cube)
         {
-            _supporting.Add(cube);
+            Supporting.Add(cube);
             cube._supported.Add(this);
         }
 
-
-        private bool IsSupported(Cube exclude)
+        public bool IsSupported(Cube excluded, IDictionary<Cube, bool> supportingByExcludedMap)
         {
-            return From.Z <= exclude.To.Z || _supported.Any(cube => cube != exclude && cube.IsSupported(exclude));
+            return From.Z <= excluded.To.Z || (supportingByExcludedMap.TryGetValue(this, out var supporting)
+                ? !supporting
+                : _supported.Any(cube => cube != excluded && cube.IsSupported(excluded, supportingByExcludedMap)));
         }
     }
 
