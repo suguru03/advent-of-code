@@ -86,12 +86,7 @@ function maximumAdjacencySearch(graph: Graph): CutOfThePhase {
     let maxNextVertex = '';
     let maxWeight = -1;
     for (const next of candidateSet) {
-      let weightSum = 0;
-      for (const s of founds) {
-        const edge = graph.getWeight(next, s);
-        weightSum += edge;
-      }
-
+      const weightSum = founds.reduce((acc, s) => acc + graph.getWeight(next, s), 0);
       if (weightSum > maxWeight) {
         maxNextVertex = next;
         maxWeight = weightSum;
