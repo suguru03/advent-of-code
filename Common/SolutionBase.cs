@@ -21,6 +21,11 @@ public abstract class SolutionBase
         return parser(File.ReadAllText(ResolvePath(filepath)));
     }
 
+    protected IEnumerable<string> ParseLines(string filepath)
+    {
+        return File.ReadLines(ResolvePath(filepath));
+    }
+
     protected IEnumerable<T> ParseLines<T>(string filepath, Func<string, T> parser)
     {
         return File.ReadLines(ResolvePath(filepath)).Select(parser);
