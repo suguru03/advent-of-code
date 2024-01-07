@@ -17,9 +17,31 @@ public partial class Solution : SolutionBase
 
     private static int Solve1(Graph graph)
     {
-        return MinCut(graph);
+        return Solve(graph);
     }
 
+    /// <summary>
+    /// https://www.reddit.com/r/adventofcode/comments/18qbsxs/comment/ketzp94/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+    /// </summary>
+    /// <param name="graph"></param>
+    /// <returns></returns>
+    private static int Solve(Graph graph)
+    {
+        var vertexSize = graph.GetVertexSize();
+        var vertexSet = graph.GetVertexSet();
+        while (vertexSet.Sum(Count) != 3)
+        {
+            Console.WriteLine($"{vertexSet.Sum(Count)}, {string.Join(',', vertexSet.OrderBy(Count))}");
+            vertexSet.Remove(vertexSet.OrderBy(Count).Last());
+        }
+
+        return vertexSet.Count * (vertexSize - vertexSet.Count);
+
+        int Count(string vertex)
+        {
+            return graph.GetEdgeMap(vertex).Keys.Count(v => !vertexSet.Contains(v));
+        }
+    }
 
     private static int MinCut(Graph orig)
     {
@@ -38,9 +60,15 @@ public partial class Solution : SolutionBase
             }
 
             MergeVertexFromCut(graph, cutOfThePhase);
+
+            if (bestCut.Weight == 3)
+            {
+                break;
+            }
         }
 
         Console.WriteLine($"best: {string.Join(',', bestPartition)}, cut: S: {bestCut!.S}, T: {bestCut.T}, Weight: {bestCut.Weight}");
+        // 532700 too low
         return bestPartition.Count * (orig.GetVertexSize() - bestPartition.Count);
     }
 
@@ -62,12 +90,12 @@ public partial class Solution : SolutionBase
 
     private static CutOfThePhase MaximumAdjacencySearch(Graph graph)
     {
-        var start = graph.GetVertexSet().First();
+        var start = graph.GetVertexSet().Last();
         var founds = new List<string>(collection: [start]);
         var candidateSet = graph.GetVertexSet().ToHashSet();
         var remaining = candidateSet.Count;
         candidateSet.Remove(start);
-        var cutWeight = 0;
+        var cutWeights = new List<int>();
         while (candidateSet.Count != 0)
         {
             var max = -1;
@@ -87,11 +115,11 @@ public partial class Solution : SolutionBase
 
             candidateSet.Remove(target);
             founds.Add(target);
-            cutWeight = max;
+            cutWeights.Add(max);
         }
 
         var n = founds.Count;
-        return new CutOfThePhase(founds[n - 2], founds[n - 1], cutWeight);
+        return new CutOfThePhase(founds[n - 2], founds[n - 1], cutWeights.Last());
     }
 
 
@@ -170,14 +198,14 @@ public partial class Solution : SolutionBase
             }
         }
 
-        public IEnumerable<string> GetVertexSet()
+        public HashSet<string> GetVertexSet()
         {
-            return edgesMap.Keys;
+            return edgesMap.Keys.ToHashSet();
         }
 
         public int GetVertexSize()
         {
-            return GetVertexSet().Count();
+            return edgesMap.Count;
         }
     }
 
