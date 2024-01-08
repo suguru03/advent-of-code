@@ -11,28 +11,33 @@ public class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
 
     private static long Solve1(Data data)
     {
+        foreach (var maps in data.MapsList)
+        {
+            maps.Sort((m1, m2) => m1.Source.CompareTo(m2.Source));
+        }
+
         var min = long.MaxValue;
         foreach (var seed in data.Seeds)
         {
             var cur = seed;
             foreach (var maps in data.MapsList)
             {
-                foreach (var map in maps)
+                foreach (var (destination, source, range) in maps)
                 {
-                    var left = map.From;
-                    var right = left + map.Range;
-                    if (cur < left || cur >= right)
+                    var limit = source + range;
+                    if (cur < source || cur >= limit)
                     {
                         continue;
                     }
 
-                    cur += map.Destination - left;
+                    cur += destination - source;
                     break;
                 }
             }
@@ -42,6 +47,76 @@ public class Solution : SolutionBase
 
         return min;
     }
+
+    private static long Solve2(Data data)
+    {
+        var seeds = data.Seeds.ToList();
+        var seedRanges = seeds.Chunk(2).Select(row => new SeedRange(row.First(), row.First() + row.Last())).ToList();
+        foreach (var maps in data.MapsList)
+        {
+            maps.Sort((m1, m2) => m1.Destination.CompareTo(m2.Destination));
+        }
+
+        var mapsList = new List<List<MapData>>();
+        var maxValue = data.MapsList.SelectMany(item => item).Select(item => item.Destination + item.Range).Max();
+        foreach (var maps in data.MapsList)
+        {
+            var left = 0L;
+            var nextMaps = new List<MapData>();
+            mapsList.Add(nextMaps);
+            foreach (var map in maps)
+            {
+                if (left < map.Destination)
+                {
+                    nextMaps.Add(new MapData(left, left, map.Destination - left));
+                }
+
+                nextMaps.Add(map);
+                left = map.Destination + map.Range;
+            }
+
+            nextMaps.Add(new MapData(left, left, maxValue));
+        }
+
+        var minSeed = FindMin(mapsList.Count, new MapData(0, 0, maxValue), mapsList, seedRanges);
+        return Solve1(data with { Seeds = new List<long> { minSeed } });
+    }
+
+    private static long FindMin(int mapsIndex, MapData prev, IList<List<MapData>> mapsList, List<SeedRange> seedRanges)
+    {
+        // find seeds
+        if (mapsIndex == 0)
+        {
+            var seed = seedRanges.Find(seed => seed.From < prev.Source + prev.Range && seed.To > prev.Source);
+            return seed != null ? Math.Max(prev.Source, seed.From) : -1;
+        }
+
+        var maps = mapsList[--mapsIndex];
+        foreach (var (destination, source, range) in maps)
+        {
+            var limit = destination + range;
+            if (destination >= prev.Source + prev.Range || limit <= prev.Source)
+            {
+                continue;
+            }
+
+            var nextDestination = Math.Max(prev.Source, destination);
+            var nextRight = Math.Min(prev.Source + prev.Range, limit);
+            var offset = source - destination;
+            var nextSource = nextDestination + offset;
+            var nextRange = nextRight - nextDestination;
+            var result = FindMin(mapsIndex, new MapData(nextDestination, nextSource, nextRange), mapsList, seedRanges);
+            if (result == -1)
+            {
+                continue;
+            }
+
+            return result;
+        }
+
+        return -1;
+    }
+
     private Data Parse(bool useExample)
     {
         return ParseText<Data>(useExample ? "example.txt" : "input.txt", row =>
@@ -53,7 +128,7 @@ public class Solution : SolutionBase
                 {
                     if (Regex.IsMatch(mapData, "(.+):"))
                     {
-                        list.Add(new List<MapData>());
+                        list.Add([]);
                         return list;
                     }
 
@@ -66,50 +141,13 @@ public class Solution : SolutionBase
 
                     return list;
                 });
-            foreach (var maps in mapsList)
-            {
-                maps.Sort((m1, m2) => (int)(m1.From - m2.From));
-            }
-
             return new Data(seeds, mapsList);
         });
     }
 
-    private class Data
-    {
-        public IEnumerable<long> Seeds { get; }
-        public IEnumerable<IEnumerable<MapData>> MapsList { get; }
+    private record Data(IEnumerable<long> Seeds, IEnumerable<List<MapData>> MapsList);
 
-        public Data(IEnumerable<long> seeds, IEnumerable<IEnumerable<MapData>> mapsList)
-        {
-            Seeds = seeds;
-            MapsList = mapsList;
-        }
-    }
+    private record MapData(long Destination, long Source, long Range);
 
-    private class MapData
-    {
-        public long Destination { get; }
-        public long From { get; }
-        public long Range { get; }
-
-        public MapData(long destination, long from, long range)
-        {
-            Destination = destination;
-            From = from;
-            Range = range;
-        }
-    }
-
-    private class SeedRange
-    {
-        public long From { get; }
-        public long To { get; }
-
-        public SeedRange(long from, long to)
-        {
-            From = from;
-            To = to;
-        }
-    }
+    private record SeedRange(long From, long To);
 }
