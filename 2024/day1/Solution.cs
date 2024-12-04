@@ -8,7 +8,7 @@ public partial class Solution : SolutionBase
     public override object Run(int part, bool useExample)
     {
         var regex = InputRegex();
-        var input = ParseLines(!useExample ? "input.txt" : part == 1 ? "example1.txt" : "example2.txt",
+        var input = ParseLines(!useExample ? "input.txt" : "example.txt",
             row =>
             {
                 var groups = regex.Match(row).Groups;
