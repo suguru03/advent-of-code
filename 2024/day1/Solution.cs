@@ -17,6 +17,7 @@ public partial class Solution : SolutionBase
         return part switch
         {
             1 => Solve1(input),
+            2 => Solve2(input),
             _ => ProblemNotSolvedString
         };
     }
@@ -35,6 +36,19 @@ public partial class Solution : SolutionBase
         rights.Sort();
 
         return lefts.Zip(rights, (x, y) => Math.Abs(x - y)).Sum();
+    }
+
+    private static int Solve2(IEnumerable<(int, int)> parseLines)
+    {
+        var leftMap = new Dictionary<int, int>();
+        var rightMap = new Dictionary<int, int>();
+        foreach (var (left, right) in parseLines)
+        {
+            leftMap[left] = leftMap.GetValueOrDefault(left) + 1;
+            rightMap[right] = rightMap.GetValueOrDefault(right) + 1;
+        }
+
+        return leftMap.Sum(kvp => kvp.Value * kvp.Key * rightMap.GetValueOrDefault(kvp.Key));
     }
 
     [GeneratedRegex(@"(\d+)\s+(\d+)")]
