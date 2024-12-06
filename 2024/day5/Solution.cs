@@ -5,6 +5,9 @@ namespace advent_of_code._2024.day5;
 
 public partial class Solution : SolutionBase
 {
+    [GeneratedRegex(@"(\d+)\|(\d+)")]
+    private static partial Regex RuleRegex();
+
     public override object Run(int part, bool useExample)
     {
         var rules = new List<(int x, int y)>();
@@ -29,19 +32,13 @@ public partial class Solution : SolutionBase
             updatesList.Add(updates);
         }
 
+        var rulesMap = ConstructRulesMap(rules);
         return part switch
         {
-            1 => Solve1(rules, updatesList),
+            1 => Solve1(rulesMap, updatesList),
+            2 => Solve2(rulesMap, updatesList),
             _ => ProblemNotSolvedString
         };
-    }
-
-    private static int Solve1(IList<(int x, int y)> rules, IList<int[]> updatesList)
-    {
-        var rulesMap = ConstructRulesMap(rules);
-        return updatesList.Where(updates => IsValid(updates, rulesMap))
-            .Select(updates => updates[updates.Length / 2])
-            .Sum();
     }
 
     private static Dictionary<int, HashSet<int>> ConstructRulesMap(IList<(int x, int y)> rules)
@@ -61,6 +58,21 @@ public partial class Solution : SolutionBase
         return rulesMap;
     }
 
+    private static int Solve1(Dictionary<int, HashSet<int>> rulesMap, IList<int[]> updatesList)
+    {
+        return updatesList.Where(updates => IsValid(updates, rulesMap))
+            .Select(updates => updates[updates.Length / 2])
+            .Sum();
+    }
+
+    private static int Solve2(Dictionary<int, HashSet<int>> rulesMap, IList<int[]> updatesList)
+    {
+        return updatesList.Where(updates => !IsValid(updates, rulesMap))
+            .Select(updates => Order(updates, rulesMap))
+            .Select(updates => updates[updates.Length / 2])
+            .Sum();
+    }
+
     private static bool IsValid(int[] updates, Dictionary<int, HashSet<int>> rulesMap)
     {
         return updates.Take(updates.Length - 1)
@@ -71,6 +83,11 @@ public partial class Solution : SolutionBase
             );
     }
 
-    [GeneratedRegex(@"(\d+)\|(\d+)")]
-    private static partial Regex RuleRegex();
+    private static int[] Order(int[] updates, Dictionary<int, HashSet<int>> rulesMap)
+    {
+        return updates.OrderBy(update =>
+                rulesMap.TryGetValue(update, out var set) ? updates.Count(u => set.Contains(u)) : 0
+            )
+            .ToArray();
+    }
 }
